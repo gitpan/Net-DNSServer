@@ -8,7 +8,6 @@ Recursive queries (Net::DNSServer::Recursion)
 TCP connections Xfer/Proxy
 Secondary/Slaving of zones
 Handle Dynamic Updates?
-SQL backend resolver
 
 The following need to be done before Alpha Release:
 

@@ -14,6 +14,7 @@ use Net::DNSServer::Cache;
 use Net::DNSServer::DBMCache;
 use Net::DNSServer::SharedCache;
 use Net::DNSServer::Proxy;
+use Net::DNSServer::DBI;
 
 $loaded = 1;
 

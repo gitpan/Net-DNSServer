@@ -2,7 +2,7 @@ package Net::DNSServer::Cache;
 
 use strict;
 use Exporter;
-use vars qw(@ISA);
+use vars qw(@ISA $expiration_check);
 use Net::DNSServer::Base;
 use Net::DNS;
 use Net::DNS::RR;
@@ -10,6 +10,7 @@ use Net::DNS::Packet;
 use Carp qw(croak);
 
 @ISA = qw(Net::DNSServer::Base);
+$expiration_check = undef;
 
 # Created and passed to Net::DNSServer->run()
 sub new {
@@ -132,6 +133,7 @@ sub post {
     print STDERR "DEBUG: Storing cache for [$key;structure]\n";
     $self -> {dns_cache} -> {"$key;structure"} = \@s;
   }
+  $self->flush_expired_ttls;
   return 1;
 }
 
@@ -146,11 +148,15 @@ sub store_rrs {
     my $key = join("\t",$rr->name.".",$rr->class,$rr->type);
     my $rdatastr = $rr->rdatastr();
     my $ttl = $rr->ttl();
-    if (!exists $answer_hash->{$key}) {
-      $answer_hash->{$key} = [];
-    }
+    my $expiration = $ttl + time;
+    $answer_hash->{$key} ||= [];
     push @{$answer_hash->{$key}},
-    [$ttl + time, $rdatastr];
+    [$expiration, $rdatastr];
+    if (!$expiration_check ||
+        $expiration < $expiration_check) {
+      # Keep track of when the earliest entry will expire.
+      $expiration_check = $expiration;
+    }
   }
   foreach my $key (keys %{$answer_hash}) {
     print STDERR "DEBUG: Storing lookup cache for [$key;lookup] (".(scalar @{$answer_hash->{$key}})." elements)\n";
@@ -158,6 +164,37 @@ sub store_rrs {
     $self->{dns_cache}->{"$key;lookup"} = $answer_hash->{$key};
   }
   return [keys %{$answer_hash}];
+}
+
+sub flush_expired_ttls {
+  my $self = shift;
+  my $now = time;
+  return unless $now > $expiration_check;
+  my ($next_expiration_check, $lookup, $cache);
+  $next_expiration_check = undef;
+  while (($lookup,$cache) = each %{ $self -> {dns_cache} }) {
+    next unless ref $cache eq "ARRAY";
+    if ($lookup =~ /^(.+)\;lookup$/) {
+      my $rr_string = $1;
+      foreach my $entry (@$cache) {
+        if (ref $entry eq "ARRAY") {
+          my $expires = $entry->[0];
+          if ($expires < $now) {
+            # Contains a TTL in the past
+            # so throw the whole thing out
+            delete $self -> {dns_cache} -> {"$rr_string;lookup"};
+            last;
+          }
+          if ($expires > $expiration_check &&
+              (!$next_expiration_check ||
+               $expires < $next_expiration_check)) {
+            $next_expiration_check = $expires;
+          }
+        }
+      }
+    }
+  }
+  $expiration_check = $next_expiration_check || undef;
 }
 
 1;
@@ -207,6 +244,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Cache.pm,v 1.7 2002/04/16 16:21:15 rob Exp $
+$Id: Cache.pm,v 1.8 2002/04/29 09:29:49 rob Exp $
 
 =cut

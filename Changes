@@ -1,5 +1,10 @@
 Revision history for Perl extension Net::DNSServer.
 
+0.09  Mon Apr 29 05:00:00 2002
+  - Net::DNSServer::Cache: Remove expired entries.
+  - Net::DNSServer::DBI resolver.
+  - demo/mysql: SQL backend working example.
+
 0.08  Tue Apr 17 17:00:00 2002
   - Get demo/named.forwader to function again.
   - Fixed "dig" syntax in t/110proxy.t.
@@ -51,4 +56,4 @@ Revision history for Perl extension Net::DNSServer.
 0.01  Tue May  1 22:01:35 2001
   - original version created by h2xs
 
-$Id: Changes,v 1.15 2002/04/17 23:59:56 rob Exp $
+$Id: Changes,v 1.17 2002/04/29 10:58:02 rob Exp $

@@ -44,7 +44,8 @@ conf/named.root
 lib/Net/DNSServer.pm
  - Main name server engine
 lib/Net/DNSServer/ConfParser.pm
- - Only subroutines for reading conf files
+ - Only subroutines for reading conf files.
+ - (May be removed in future versions.)
 lib/Net/DNSServer/*
  - Various resolver modules
 
@@ -69,7 +70,7 @@ See the BUGS file for more information.
 5. COPYRIGHT
 ------------
 
-Copyright (c) 2001 Rob Brown.  All rights reserved.
+Copyright (c) 2002 Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
@@ -95,8 +96,8 @@ Sam Tregar <sam@tregar.com>
  - IPC::SharedCache is perfect for holding the
    DNS information with a TTL validate_hook for
    Net::Server::PreFork servers.
- - It made my SharedCache resolver much easier.
+ - It is the guts of my SharedCache resolver.
 
 
 ---------------------------
-$Id: README,v 1.6 2001/05/29 03:31:23 rob Exp $
+$Id: README,v 1.7 2002/04/29 02:54:15 rob Exp $

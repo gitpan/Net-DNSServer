@@ -12,8 +12,9 @@ WriteMakefile
     'Net::DNS'            => 0.19,  # Root NS patch
     'Net::Server'         => 0.62,  # UDP support
     'IPC::SharedCache'    => 1.3,   # PreFork support
-    'Storable'            => 1.0,   # Any Storable should work
+    'Storable'            => 0,     # Any Storable should work
     'Net::Bind'           => 0.03,  # Resolv parser
+    'DBI'                 => 0,     # Compile SQL Backend
   },
   ;
 

@@ -16,3 +16,7 @@ named.forwarder
 
 named.dbmcache
  - Uses a dbmfile for the TTL cache.
+
+mysql/README
+ - Working example of SQL backend resolver.
+ - Requires DBI and DBD::mysql to be installed.

@@ -58,7 +58,7 @@ Group:		Development/Languages/Perl
 Source0:	http://www.cpan.org./authors/id/B/BB/BBB/%{perlmod}-%{version}.tar.gz
 Packager:	Rob Brown <bbb@cpan.org>
 Prefix: 	/usr
-BuildRequires:	perl, Net-DNS, Net-Bind, Net-Server
+BuildRequires:	perl, Net-DNS, Net-Bind, Net-Server, DBI
 Requires:	perl, Net-DNS, Net-Bind, Net-Server
 BuildRoot:	/var/tmp/%{name}-%{version}-root-%(id -u -n)
 Provides:	%{perlmod} = %{version}
@@ -85,7 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -f %{name}-filelist
 %defattr(-,root,root)
-%doc README Changes demo
+%doc README INSTALL TODO BUGS Changes demo
 
 %post
 

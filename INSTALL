@@ -9,10 +9,7 @@ Net::DNSServer requires the following:
   Perl         >=  5.003
   Net::Server  >=  0.62
   Net::DNS     >=  0.19
-
-Michael Fuhr, the author of Net::DNS has not posted
-the required version to CPAN as of the time of this
-writing.
+  Net::Bind    >=  0.04
 
 RPM binaries and source of Net::DNS 0.19 which work
 on the old Perl 5.005 as well as Perl 5.6.0 (linux)
@@ -42,3 +39,14 @@ To build this module, run the following commands:
 When you run "perl Makefile.PL", it should complain
 if any of the required modules are missing.  Install
 those first then try again if you run into trouble.
+
+RPM
+---
+
+If you prefer the rpm method instead, use the tarball.
+
+    perl Makefile.PL
+    make dist
+    rpm -ta Net-DNSServer-*.tar.gz
+
+# rpm -ivh /usr/src/*/RPMS/*/perl-Net-DNSServer-*.rpm
