@@ -1,7 +1,8 @@
 package Net::DNSServer::DBMCache;
 
+use strict;
 use Exporter;
-use vars qw(@ISA);
+use vars qw(@ISA $expiration_check);
 use Net::DNSServer::Base;
 use Net::DNS;
 use Net::DNS::RR;
@@ -10,20 +11,18 @@ use Carp qw(croak);
 use IO::File;
 use Fcntl qw(LOCK_SH LOCK_EX LOCK_UN);
 use Storable qw(freeze thaw);
-use POSIX qw(O_CREAT O_RDWR);
+use GDBM_File;
 
 @ISA = qw(Net::DNSServer::Base);
+$expiration_check = undef;
 
 # Created and passed to Net::DNSServer->run()
 sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
-  if (! $self -> {dbm_file} ||
-      ( $self -> {dbm_reorder} &&
-        ref $self -> {dbm_reorder} ne "ARRAY")) {
+  if (! $self -> {dbm_file} ) {
     croak 'Usage> new({
     dbm_file    => "/var/named/dns_cache.db",
-    dbm_reorder => [qw(DB_File GDBM_File NDBM_File)],
     fresh       => 0})';
   }
   # Create lock file to serialize DBM accesses and avoid DBM corruption
@@ -36,19 +35,13 @@ sub new {
   flock($lock,LOCK_UN) || die "Couldn't unlock on $self->{dbm_file}.LOCK";
   $lock->close();
 
-  if ($self -> {dbm_reorder} &&
-      ref ($self -> {dbm_reorder}) eq "ARRAY") {
-    @AnyDBM_File::ISA = @{ $self -> {dbm_reorder} };
-  }
-  require AnyDBM_File;
-  import AnyDBM_File;
-
   $self -> {dns_cache} = {};
   # Actually connect to dbm file as a test
   tie (%{ $self -> {dns_cache} },
-       'AnyDBM_File',
+       'GDBM_File',
        $self->{dbm_file},
-       O_CREAT|O_RDWR)
+       &GDBM_WRCREAT,
+       0640)
     || croak "Could not connect to $self->{dbm_file}";
   if ($self -> {fresh}) {
     # Wipe any old information if it exists from last time
@@ -93,9 +86,10 @@ sub resolve {
   my $lock = IO::File->new ("$self->{dbm_file}.LOCK", "w");
   $lock && flock($lock,LOCK_SH);
   tie (%{ $self -> {dns_cache} },
-       'AnyDBM_File',
+       'GDBM_File',
        $self->{dbm_file},
-       O_CREAT|O_RDWR);
+       &GDBM_WRCREAT,
+       0640);
   my $cache_structure = $self -> {dns_cache} -> {"$key;structure"} || undef;
   $cache_structure &&= thaw $cache_structure;
   unless ($cache_structure &&
@@ -150,8 +144,7 @@ sub fetch_rrs {
     return undef;
   }
   foreach my $rr_string (@$array_ref) {
-    my $lookup = validate_ttl($self -> {dns_cache} -> {"$rr_string;lookup"}) || undef;
-    $lookup &&= thaw $lookup;
+    my $lookup = validate_ttl(thaw ($self -> {dns_cache} -> {"$rr_string;lookup"})) || undef;
     unless ($lookup && ref $lookup eq "ARRAY") {
       print STDERR "DEBUG: Lookup Cache miss on [$rr_string]\n";
       return undef;
@@ -177,9 +170,10 @@ sub post {
     my $lock = IO::File->new ("$self->{dbm_file}.LOCK", "w");
     $lock && flock($lock,LOCK_EX);
     tie (%{ $self -> {dns_cache} },
-         'AnyDBM_File',
+         'GDBM_File',
          $self->{dbm_file},
-         O_CREAT|O_RDWR);
+         &GDBM_WRCREAT,
+         0640);
     # Grab the answer packet
     my $dns_packet = shift;
     # Store the answer into the cache
@@ -191,6 +185,7 @@ sub post {
     push @s, $self->store_rrs($dns_packet->additional);
     print STDERR "DEBUG: Storing cache for [$key;structure]\n";
     $self -> {dns_cache} -> {"$key;structure"} = freeze \@s;
+    $self->flush_expired_ttls;
     untie (%{ $self -> {dns_cache} }) if tied %{ $self -> {dns_cache} };
     $lock->close();
   }
@@ -234,6 +229,38 @@ sub cleanup {
            "$self->{dbm_file}.pag");
   }
   return 1;
+}
+
+sub flush_expired_ttls {
+  my $self = shift;
+  my $now = time;
+  return unless $now > $expiration_check;
+  my ($next_expiration_check, $lookup, $cache);
+  $next_expiration_check = undef;
+  while (($lookup,$cache) = each %{ $self -> {dns_cache} }) {
+    $cache = thaw $cache;
+    next unless ref $cache eq "ARRAY";
+    if ($lookup =~ /^(.+)\;lookup$/) {
+      my $rr_string = $1;
+      foreach my $entry (@$cache) {
+        if (ref $entry eq "ARRAY") {
+          my $expires = $entry->[0];
+          if ($expires < $now) {
+            # Contains a TTL in the past
+            # so throw the whole thing out
+            delete $self -> {dns_cache} -> {"$rr_string;lookup"};
+            last;
+          }
+          if ($expires > $expiration_check &&
+              (!$next_expiration_check ||
+               $expires < $next_expiration_check)) {
+            $next_expiration_check = $expires;
+          }
+        }
+      }
+    }
+  }
+  $expiration_check = $next_expiration_check || undef;
 }
 
 1;
@@ -320,7 +347,7 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DBMCache.pm,v 1.9 2002/04/08 07:02:08 rob Exp $
+$Id: DBMCache.pm,v 1.12 2002/06/07 22:55:08 rob Exp $
 
 =cut
 

@@ -77,19 +77,18 @@ it and/or modify it under the same terms as Perl itself.
 6. CREDITS
 -----------
 
-Rob Brown <rob@roobik.com>
+Rob Brown <bbb@cpan.org>
  - http://freeware.roobik.com/dnsserver/
- - I wrote it
+ - Wrote the majority of code.
 
 Paul Seamons <paul@seamons.com>
  - http://seamons.com/
  - Net::Server made this project much easier.
 
 Michael Fuhr <mfuhr@dimensional.com>
- - http://www.dimensional.com/~mfuhr/
- - Very large contributor (wrote Net::DNS)
- - Inspiration from his TODO motivated me:
-   "Consider writing a simple nameserver with Net::DNS."
+Chris Reinhardt <ctriv@dyndns.org>
+ - http://www.net-dns.org/
+ - Very large contributor (Net::DNS)
 
 Sam Tregar <sam@tregar.com>
  - http://www.cpan.org/authors/id/S/SA/SAMTREGAR/
@@ -100,4 +99,4 @@ Sam Tregar <sam@tregar.com>
 
 
 ---------------------------
-$Id: README,v 1.7 2002/04/29 02:54:15 rob Exp $
+$Id: README,v 1.8 2002/06/07 23:21:53 rob Exp $

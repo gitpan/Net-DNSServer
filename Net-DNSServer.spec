@@ -2,7 +2,7 @@
 %define perlmod Net-DNSServer
 Summary:	%{perlmod} perl module
 Name:		perl-%{perlmod}
-Version:	0.09
+Version:	0.11
 Release:	1
 License:	GPL
 Group:		Development/Languages/Perl

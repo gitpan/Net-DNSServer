@@ -25,7 +25,7 @@ Probably just utilize an external parsing
 module like one or more of the following:
  - DNS::ZoneParse
  - DNS::ZoneFile
+ - Net::DNS::ZoneFile
  - Net::Bind
  - BIND::Conf_Parser
-DBM_File/Freeze safe cache support (Net::DNSServer::DBMCache)
 No weird hard coded files or at least better defaults.

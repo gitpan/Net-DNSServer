@@ -1,6 +1,6 @@
 package Net::DNSServer::Proxy;
 
-# $Id: Proxy.pm,v 1.12 2002/04/16 20:11:59 rob Exp $
+# $Id: Proxy.pm,v 1.13 2002/11/13 19:57:24 rob Exp $
 # This module simply forwards a request to another name server to do the work.
 
 use strict;
@@ -25,7 +25,7 @@ sub new {
   my $self = shift || {};
   if (! $self -> {real_dns_server} ) {
     # Use the first nameserver in resolv.conf as default
-    my $res = new Net::Bind::Resolv('/etc/resolv.conf');
+    my $res = Net::Bind::Resolv->new('/etc/resolv.conf');
     ($self -> {real_dns_server}) = $res -> nameservers();
     # XXX - This should probably cycle through all the
     # nameserver entries until one successfully accepts.
@@ -35,7 +35,7 @@ sub new {
   # XXX - It should allow a way to override the port
   #       (like host:5353) instead of forcing to 53
   # Initial "connect" to a remote resolver
-  my $that_server = new IO::Socket::INET
+  my $that_server = IO::Socket::INET->new
     (PeerAddr     => $self->{real_dns_server},
      PeerPort     => "domain",
      Proto        => "udp");
@@ -55,6 +55,7 @@ sub resolve {
   my $dns_packet = $self -> {question};
   my $response_data;
   my $old_alarm = 0;
+  my $result_packet = undef;
   $@ = "";
   eval {
     local $SIG{ALRM} = sub {
@@ -64,8 +65,15 @@ sub resolve {
     if (!$self -> {that_server} -> send($dns_packet->data)) {
       die "send: $!\n";
     }
-    if (!$self -> {that_server} -> recv($response_data,4096)) {
-      die "recv: $!\n";
+    while (1) {
+      if (!$self -> {that_server} -> recv($response_data,4096)) {
+        die "recv: $!\n";
+      }
+      $result_packet = Net::DNS::Packet->new(\$response_data);
+      if ($result_packet->header->id == $dns_packet->header->id) {
+        last;
+      }
+      $result_packet = undef;
     }
   };
   alarm ($old_alarm);
@@ -77,7 +85,7 @@ sub resolve {
     }
     return undef;
   }
-  return new Net::DNS::Packet (\$response_data);
+  return $result_packet;
 }
 
 1;
@@ -158,6 +166,6 @@ Copyright (c) 2002, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Proxy.pm,v 1.12 2002/04/16 20:11:59 rob Exp $
+$Id: Proxy.pm,v 1.13 2002/11/13 19:57:24 rob Exp $
 
 =cut
