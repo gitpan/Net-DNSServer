@@ -1,18 +1,38 @@
 package Net::DNSServer;
 
-# $Id: DNSServer.pm,v 1.11 2001/05/24 15:01:06 rob Exp $
-
 use strict;
-use warnings;
 use Exporter;
 use Net::DNS;
 use Net::Server::MultiType;
 use Getopt::Long qw(GetOptions);
-
+use Carp qw(croak);
 use vars qw(@ISA $VERSION);
 @ISA = qw(Exporter Net::Server::MultiType);
 
-$VERSION = '0.03';
+$VERSION = '0.04';
+
+sub run {
+  my $class = shift;
+  $class = ref $class || $class;
+  my $prop  = shift;
+  unless ($prop &&
+          (ref $prop) &&
+          (ref $prop eq "HASH") &&
+          ($prop->{priority}) &&
+          (ref $prop->{priority} eq "ARRAY")) {
+    croak "Usage> $class->run({priority => \\\@resolvers})";
+  }
+  foreach (@{ $prop->{priority} }) {
+    my $type = ref $_;
+    if (!$type) {
+      croak "Not a Net::DNSServer::Base object [$_]";
+    } elsif (!$_->isa('Net::DNSServer::Base')) {
+      croak "Resolver object must isa Net::DNSServer::Base (Type [$type] is not?)";
+    }
+  }
+  my $self = bless $prop, $class;
+  return $self->SUPER::run(@_);
+}
 
 sub configure_hook {
   my $self = shift;
@@ -165,15 +185,19 @@ Net::DNSServer - Perl module to be used as a name server
 =head1 SYNOPSIS
 
   use Net::DNSServer;
-  blah blah blah
+
+  Net::DNSServer->run({
+    priority => [ list of resolver objects ],
+  });
+  # never returns
 
 =head1 DESCRIPTION
 
-Stub documentation for Net::DNSServer, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
+Net::DNSServer will run a name server based on the
+Net::DNSServer::Base resolver objects passed to it.
+Usually the first resolver is some sort of caching
+resolver.  The rest depend on what kind of name
+server you are trying to run.
 
 =head2 EXPORT
 
@@ -182,10 +206,20 @@ None by default.
 
 =head1 AUTHOR
 
-A. U. Thor, a.u.thor@a.galaxy.far.far.away
+Rob Brown, rob@roobik.com
 
 =head1 SEE ALSO
 
-perl(1).
+L<Net::DNSServer::Base>,
+L<Net::DNSServer::Cache>,
+L<Net::DNSServer::MemCache>,
+L<Net::DNSServer::DBMCache>,
+L<Net::DNSServer::Proxy>,
+L<Net::DNS>,
+L<Net::Server>
+
+named(8).
+
+$Id: DNSServer.pm,v 1.14 2001/05/27 05:31:41 rob Exp $
 
 =cut

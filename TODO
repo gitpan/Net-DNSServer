@@ -9,6 +9,9 @@ TCP connections Xfer/Proxy
 Secondary/Slaving of zones
 Handle Dynamic Updates?
 SQL backend resolver
+
+The following need to be done before Alpha Release:
+
 Hint zone support
 Main configuration file parsing
  - Compatible with bind, but more options
@@ -19,5 +22,5 @@ Zone configuration file parsing
  - Use ";" as comments
  - Handle $TTL, $ORIGIN, etc
  - Zone "Templating" support
-Single process InMem cache support (Net::Server::Single only)
 DBM_File/Freeze safe cache support (Net::DNSServer::DBMCache)
+No weird hard coded files or IPs or at least better defaults.

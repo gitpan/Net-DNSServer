@@ -1,7 +1,9 @@
 package Net::DNSServer::DBMCache;
 
-# $Id: DBMCache.pm,v 1.1 2001/05/24 14:22:16 rob Exp $
-# This is meant to be the base class for all Net::DNSServer resolving module handlers
+# $Id: DBMCache.pm,v 1.2 2001/05/26 18:07:15 rob Exp $
+# Implement a DNS Cache using AnyDBM_File with locking to avoid corruption
+# so Net::Server::PreFork (different processes) can share the
+# same cache to follow the rfcs.
 
 use Exporter;
 use vars qw(@ISA);
@@ -11,6 +13,7 @@ use Carp qw(croak);
 use IO::File;
 use Fcntl qw(LOCK_SH LOCK_EX LOCK_UN);
 use Storable qw(freeze thaw);
+use POSIX qw(O_CREAT O_RDWR);
 
 @ISA = qw(Net::DNSServer::Base);
 
@@ -18,8 +21,13 @@ use Storable qw(freeze thaw);
 sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
-  if (! $self -> {dbm_file} ) {
-    croak 'Usage> new({dbm_file => "/var/log/dns_cache.db", fresh => 0})';
+  if (! $self -> {dbm_file} ||
+      ( $self -> {dbm_reorder} &&
+        ref $self -> {dbm_reorder} ne "ARRAY")) {
+    croak 'Usage> new({
+    dbm_file    => "/var/named/dns_cache.db", 
+    dbm_reorder => [qw(DB_File GDBM_File NDBM_File)],
+    fresh       => 0})';
   }
   # Create lock file to serialize DBM accesses and avoid DBM corruption
   my $lock = IO::File->new ("$self->{dbm_file}.LOCK", "w")
@@ -31,15 +39,22 @@ sub new {
   flock($lock,LOCK_UN) || die "Couldn't unlock on $self->{dbm_file}.LOCK";
   $lock->close();
 
+  if ($self -> {dbm_reorder} &&
+      ref ($self -> {dbm_reorder}) eq "ARRAY") {
+    @AnyDBM_File::ISA = @{ $self -> {dbm_priority} };
+  }
+  require AnyDBM_File;
+  import AnyDBM_File;
+
   # Actually connect to dbm file as a test
   my %db=();
-  dbmopen(%db, $self->{dbm_file}, 0666)
+  tie (%db,  'AnyDBM_File', $self->{dbm_file}, O_CREAT|O_RDWR)
     || croak "Could not connect to $self->{dbm_file}";
   if ($self -> {fresh}) {
     # Wipe any old information if it exists from last time
     %db=();
   }
-  dbmclose(%db);
+  untie (%db);
   return bless $self, $class;
 }
 
@@ -70,6 +85,10 @@ sub post {
 sub cleanup {
   my $self = shift;
   unlink "$self->{dbm_file}.LOCK";
+  if ($self -> {fresh}) {
+    unlink "$self->{dbm_file}";
+    unlink "$self->{dbm_file}.db";
+  }
   return 1;
 }
 

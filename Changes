@@ -1,5 +1,13 @@
 Revision history for Perl extension Net::DNSServer.
 
+0.04  Thu May 26 10:00:00 2001
+  - Simpler Cache resolver for Net::Server::Single objects.
+  - Actually runs on old Perl 5.005 now too.
+  - Test suite within t/*.t
+  - Remove dependencies from my internal (non-CPAN) modules.
+  - Fixed some (root) caching bugs.
+  - Makefile.PL PREREQ_PM settings.
+
 0.03  Thu May 24 09:00:00 2001
   - Initial attempt at reading and parsing a config file.
   - Created some functional example scripts.

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -T
 
-# $Id: named,v 1.8 2001/05/24 14:54:36 rob Exp $
+# $Id: named,v 1.2 2001/05/27 05:31:41 rob Exp $
 #
 # This example starter script to load a configuration.
 # It really only forwards and caches right now, since I
@@ -67,10 +67,8 @@ my $proxy_resolver = new Net::DNSServer::Proxy {
   real_dns_server => "198.60.22.22",
 };
 
-my $server = bless {
+Net::DNSServer->run({
   priority => [$cache_resolver,$proxy_resolver],
-}, 'Net::DNSServer';
-
-$server->run();
+});
 
 exit;

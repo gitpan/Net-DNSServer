@@ -1,6 +1,6 @@
-package Net::DNSServer::MemCache;
+package Net::DNSServer::Cache;
 
-# $Id: MemCache.pm,v 1.6 2001/05/26 17:59:08 rob Exp $
+# $Id: Cache.pm,v 1.3 2001/05/26 18:00:13 rob Exp $
 # Implement a DNS Cache using IPC::SharedCache with shared memory
 # so Net::Server::PreFork (different processes) can share the
 # same cache to follow the rfcs.
@@ -13,7 +13,6 @@ use Net::DNS;
 use Net::DNS::RR;
 use Net::DNS::Packet;
 use Carp qw(croak);
-use IPC::SharedCache;
 
 @ISA = qw(Net::DNSServer::Base);
 
@@ -21,46 +20,32 @@ use IPC::SharedCache;
 sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
-  if (! $self -> {ipc_key} || ! exists $self -> {max_size}) {
-    croak 'Usage> new({ipc_key => "fred" [ , max_size => 50_000_000 ] [, fresh => 0 ] })';
-  }
-  if ($self -> {fresh}) {
-    &IPC::SharedCache::remove( $self -> {ipc_key} );
-  }
-  my %dns_cache=();
-  tie (%dns_cache, 'IPC::SharedCache',
-       ipc_key             => $self->{ipc_key},
-       load_callback       => \&load_answer,
-       validate_callback   => \&validate_ttl,
-       max_size            => $self->{max_size},
-       ) || die "IPC::SharedCache failed for ipc_key [$self->{ipc_key}]";
-  if ($self -> {fresh}) {
-    %dns_cache = ();
-  }
-  $self -> {dns_cache} = \%dns_cache;
+  $self -> {structure_cache} ||= {};
+  $self -> {lookup_cache}    ||= {};
   return bless $self, $class;
-}
-
-# If the TTL expires, there is nothing to use anymore.
-sub load_answer {
-  my $key = shift;
-  print STDERR "DEBUG: load_answer called for [$key]\n";
-  return \undef;
 }
 
 # Check if the TTL is still good
 sub validate_ttl {
-  my ($key, $value) = @_;
-  print STDERR "DEBUG: validate_ttl called for [$key]\n";
-  # There is no TTL stored in the DNS structure result
-  return 1 if $key =~ /\;(structure)$/;
-  return 1 unless $key =~ /\;(lookup)$/;
-  return 0 unless (ref $value) eq "ARRAY";
+  my $value = shift or return undef;
+  return undef unless (ref $value) eq "ARRAY";
   foreach my $entry (@$value) {
     # If this entry has expired, then throw the whole thing out
-    return 0 if (ref $entry) ne "ARRAY" || $entry->[0] < time;
+    return undef if (ref $entry) ne "ARRAY" || $entry->[0] < time;
   }
   # If nothing has expired, the data is still valid
+  return $value;
+}
+
+# Called once at configuration load time by Net::DNSServer.
+# Takes the Net::DNSServer object as an argument
+sub init {
+  my $self = shift;
+  my $net_server = shift;
+  unless ($net_server && (ref $net_server) && ($net_server->isa("Net::Server::Single"))) {
+    croak 'Usage> '.(__PACKAGE__).'->init(Net::Server::Single object) You gave me a ['.(ref $net_server).'] object';
+  }
+  $self -> {net_server} = $net_server,
   return 1;
 }
 
@@ -82,14 +67,14 @@ sub resolve {
   my $dns_packet = $self -> {question};
   my ($question) = $dns_packet -> question();
   my $key = $question->string();
-  my $cache_structure = $self -> {dns_cache} -> {"$key;structure"} || undef;
+  my $cache_structure = $self -> {structure_cache} -> {$key} || undef;
   unless ($cache_structure &&
           (ref $cache_structure) eq "ARRAY" &&
           (scalar @$cache_structure) == 3) {
-    print STDERR "DEBUG: Cache miss on [$key;structure]\n";
+    print STDERR "DEBUG: Structure Cache miss on [$key]\n";
     return undef;
   }
-  print STDERR "DEBUG: Cache hit on [$key;structure]\n";
+  print STDERR "DEBUG: Structure Cache hit on [$key]\n";
   # Structure key found in cache, so lookup actual values
 
   # ANSWER Section
@@ -105,7 +90,7 @@ sub resolve {
   unless ($answer_ref && $authority_ref && $additional_ref) {
     # If not, flush structure key to ensure
     # it will be re-stored in the post() phase.
-    delete $self -> {dns_cache} -> {"$key;structure"};
+    delete $self -> {structure_cache} -> {$key};
     return undef;
   }
 
@@ -131,10 +116,13 @@ sub fetch_rrs {
     return undef;
   }
   foreach my $rr_string (@$array_ref) {
-    my $lookup = $self -> {dns_cache} -> {"$rr_string;lookup"} || undef;
-    unless ($lookup && ref $lookup eq "ARRAY") {
+    my $lookup = validate_ttl($self -> {lookup_cache} -> {$rr_string});
+    unless ($lookup) {
+      print STDERR "DEBUG: Lookup Cache miss on [$rr_string]\n";
       return undef;
     }
+    print STDERR "DEBUG: Lookup Cache hit on [$rr_string]\n";
+
     foreach my $entry (@$lookup) {
       return undef unless ref $entry eq "ARRAY";
       my ($expire,$rdatastr) = @$entry;
@@ -158,8 +146,8 @@ sub post {
     push @s, $self->store_rrs($dns_packet->answer);
     push @s, $self->store_rrs($dns_packet->authority);
     push @s, $self->store_rrs($dns_packet->additional);
-    print STDERR "DEBUG: Storing cache for [$key;structure]\n";
-    $self -> {dns_cache} -> {"$key;structure"} = \@s;
+    print STDERR "DEBUG: Storing cache for [$key]\n";
+    $self -> {structure_cache} -> {$key} = \@s;
   }
   return 1;
 }
@@ -171,7 +159,7 @@ sub post {
 sub store_rrs {
   my $self = shift;
   my $answer_hash = {};
-  my $dns_cache = $self -> {dns_cache};
+  my $lookup_cache = $self -> {lookup_cache};
   foreach my $rr (@_) {
     my $key = join("\t",$rr->name.".",$rr->class,$rr->type);
     my $rdatastr = $rr->rdatastr();
@@ -183,23 +171,11 @@ sub store_rrs {
     [$ttl + time, $rdatastr];
   }
   foreach my $key (keys %{$answer_hash}) {
+    print STDERR "DEBUG: Storing lookup cache for [$key] (".(scalar @{$answer_hash->{$key}})." elements)\n";
     # Save the rdatastr values into the lookup cache
-    $dns_cache->{"$key;lookup"} = $answer_hash->{$key};
+    $lookup_cache->{$key} = $answer_hash->{$key};
   }
   return [keys %{$answer_hash}];
-}
-
-# Called once prior to server shutdown
-sub cleanup {
-  my $self = shift;
-  if ($self -> {fresh}) {
-    %{$self -> {dns_cache}} = ();
-  }
-  untie %{$self -> {dns_cache}};
-  if ($self -> {fresh}) {
-    &IPC::SharedCache::remove( $self -> {ipc_key} );
-  }
-  return 1;
 }
 
 1;
