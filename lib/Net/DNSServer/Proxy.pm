@@ -1,11 +1,11 @@
 package Net::DNSServer::Proxy;
 
-# $Id: Proxy.pm,v 1.8 2001/06/08 07:48:50 rob Exp $
+# $Id: Proxy.pm,v 1.11 2002/04/08 07:02:48 rob Exp $
 # This module simply forwards a request to another name server to do the work.
 
 use strict;
 use Exporter;
-use vars qw(@ISA);
+use vars qw(@ISA $default_response_timeout);
 use Net::DNSServer::Base;
 use Net::DNS;
 use Net::DNS::Packet;
@@ -14,6 +14,10 @@ use Carp qw(croak);
 use IO::Socket;
 
 @ISA = qw(Net::DNSServer::Base);
+
+# Default timeout in seconds to wait for
+# a response from real_dns_server.
+$default_response_timeout = 5;
 
 # Created before calling Net::DNSServer->run()
 sub new {
@@ -37,6 +41,7 @@ sub new {
     croak "Remote dns server [$self->{real_dns_server}] is down.";
   }
   $self -> {that_server} = $that_server;
+  $self -> {patience} ||= $default_response_timeout;
   return bless $self, $class;
 }
 
@@ -47,11 +52,30 @@ sub resolve {
   my $self = shift;
   my $dns_packet = $self -> {question};
   my $response_data;
-  if ($self -> {that_server} -> send($dns_packet->data) &&
-      $self -> {that_server} -> recv($response_data,4096)) {
-    return new Net::DNS::Packet (\$response_data);
+  my $old_alarm = 0;
+  $@ = "";
+  eval {
+    local $SIG{ALRM} = sub {
+      die "Got bored!\n";
+    };
+    $old_alarm = alarm ($self->{patience});
+    if (!$self -> {that_server} -> send($dns_packet->data)) {
+      die "send: $!\n";
+    }
+    if (!$self -> {that_server} -> recv($response_data,4096)) {
+      die "recv: $!\n";
+    }
+  };
+  alarm ($old_alarm);
+  if ($@) {
+    if ($@ =~ /bored/i) {
+      print STDERR "Warning: real_dns_server [$self->{real_dns_server}] did not respond after [$self->{patience}] seconds.\n";
+    } else {
+      print STDERR "Warning: Failed to proxy via real_dns_server [$self->{real_dns_server}]: $@";
+    }
+    return undef;
   }
-  return undef;
+  return new Net::DNS::Packet (\$response_data);
 }
 
 1;
@@ -59,9 +83,7 @@ __END__
 
 =head1 NAME
 
-Net::DNSServer::Proxy
-- A Net::DNSServer::Base which simply forwards
-a request to another name server to resolve.
+Net::DNSServer::Proxy - Forwards requests to another DNS server
 
 =head1 SYNOPSIS
 
@@ -70,15 +92,19 @@ a request to another name server to resolve.
   use Net::DNSServer;
   use Net::DNSServer::Proxy;
 
-  # Specify which remote server to proxy to
   my $resolver = new Net::DNSServer::Proxy {
+    # Which remote server to proxy to
     real_dns_server => "12.34.56.78",
+    # Seconds to wait for its response
+    patience => 2,
   };
 
     -- or --
 
-  # Or, it will default to the first "nameserver"
-  # entry in /etc/resolv.conf
+  # real_dns_server will default to the first
+  # "nameserver" entry in /etc/resolv.conf.
+  # patience will will default to
+  # $Net:DNSServer::Proxy::default_response_timeout.
   my $resolver = new Net::DNSServer::Proxy;
 
   run Net::DNSServer {
@@ -106,6 +132,12 @@ the standard named port (53).
 It defaults to the first "nameserver" entry
 found in the /etc/resolv.conf file.
 
+=head2 patience (optional)
+
+Number of seconds to wait for a response from
+real_dns_server before timing out.  It defaults
+to $Net:DNSServer::Proxy::default_response_timeout.
+
 =head1 AUTHOR
 
 Rob Brown, rob@roobik.com
@@ -119,10 +151,11 @@ resolver(5)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2001, Rob Brown.  All rights reserved.
+Copyright (c) 2002, Rob Brown.  All rights reserved.
+
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Proxy.pm,v 1.8 2001/06/08 07:48:50 rob Exp $
+$Id: Proxy.pm,v 1.11 2002/04/08 07:02:48 rob Exp $
 
 =cut

@@ -22,7 +22,7 @@ sub new {
       ( $self -> {dbm_reorder} &&
         ref $self -> {dbm_reorder} ne "ARRAY")) {
     croak 'Usage> new({
-    dbm_file    => "/var/named/dns_cache.db", 
+    dbm_file    => "/var/named/dns_cache.db",
     dbm_reorder => [qw(DB_File GDBM_File NDBM_File)],
     fresh       => 0})';
   }
@@ -240,23 +240,17 @@ sub cleanup {
 __END__
 =head1 NAME
 
-Net::DNSServer::DBMCache
-- A Net::DNSServer::Base which uses AnyDBM_File
-with locking to implement a DNS Cache on disk to
-allow the cache to be shared across processes.
-This is useful if the server forks (Net::Server::PreFork)
-and to preserve memory by not having to
-store large caches in memory.
+Net::DNSServer::DBMCache - AnyDBM_File DNS Cache resolver
 
 =head1 SYNOPSIS
-{
+
   #!/usr/bin/perl -w -T
   use strict;
   use Net::DNSServer;
   use Net::DNSServer::DBMCache;
 
   my $resolver1 = new Net::DNSServer::DBMCache {
-    dbm_file    => "/var/named/dns_cache.db", 
+    dbm_file    => "/var/named/dns_cache.db",
     dbm_reorder => [qw(DB_File GDBM_File NDBM_File)],
     fresh       => 1,
   };
@@ -266,6 +260,13 @@ store large caches in memory.
   };
 
 =head1 DESCRIPTION
+
+A Net::DNSServer::Base which uses AnyDBM_File
+with locking to implement a DNS Cache on disk to
+allow the cache to be shared across processes.
+This is useful if the server forks (Net::Server::PreFork)
+and to preserve memory by not having to
+store large caches in memory.
 
 This resolver will cache responses that
 another module resolves complying with the
@@ -301,7 +302,7 @@ file at server startup and shutdown and restart.
 It defaults to 0 meaning it will try to keep and
 reuse the database file it creates.
 
-=head2 
+=head2
 
 =head1 AUTHOR
 
@@ -319,7 +320,7 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DBMCache.pm,v 1.6 2001/06/29 05:19:25 rob Exp $
+$Id: DBMCache.pm,v 1.9 2002/04/08 07:02:08 rob Exp $
 
 =cut
 

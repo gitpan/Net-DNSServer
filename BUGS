@@ -11,6 +11,7 @@ the following information:
 
   * version of Perl
   * version of Net::DNSServer
+  * version of Net::Server
   * version of Net::DNS
   * version of IO
   * operating system type and version

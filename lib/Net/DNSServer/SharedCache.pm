@@ -203,11 +203,7 @@ __END__
 
 =head1 NAME
 
-Net::DNSServer::SharedCache
-- A Net::DNSServer::Base which uses IPC::SharedCache
-to implement a DNS Cache in shared memory to allow
-the cache to be shared across processes.
-This is useful if the server forks (Net::Server::PreFork).
+Net::DNSServer::SharedCache - IPC::SharedCache DNS Cache resolver
 
 =head1 SYNOPSIS
 
@@ -227,6 +223,11 @@ This is useful if the server forks (Net::Server::PreFork).
   };
 
 =head1 DESCRIPTION
+
+A Net::DNSServer::Base which uses IPC::SharedCache
+to implement a DNS Cache in shared memory to allow
+the cache to be shared across processes.
+This is useful if the server forks (Net::Server::PreFork).
 
 This resolver will cache responses that
 another module resolves complying with the
@@ -272,7 +273,7 @@ the shared memory segments it creates.
 Use ipcs and ipcrm to manually manage the
 shared memory segments if necessary.
 
-=head2 
+=head2
 
 =head1 AUTHOR
 
@@ -294,7 +295,7 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: SharedCache.pm,v 1.3 2001/06/29 05:17:29 rob Exp $
+$Id: SharedCache.pm,v 1.4 2002/04/08 07:01:17 rob Exp $
 
 =cut
 

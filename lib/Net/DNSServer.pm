@@ -9,7 +9,7 @@ use Carp qw(croak);
 use vars qw(@ISA $VERSION);
 @ISA = qw(Exporter Net::Server::MultiType);
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 sub run {
   my $class = shift;
@@ -66,12 +66,20 @@ sub configure_hook {
     $self -> set_property( group => $group ) if defined $group;
 
     # Which port to bind
-    $server_port ||= "domain";
+    $server_port ||= getservbyname("domain", "udp");
     $server_port ||= 53;
+    if ($self->{server}->{port} &&
+        ref $self->{server}->{port} eq "ARRAY" &&
+        (@{ $self->{server}->{port} })[0] =~ /^(\d+)/) {
+      $server_port = $1;
+    }
     $self -> set_property( port => ["$server_port/tcp", "$server_port/udp"] );
 
     # Where to store process ID for parent process
-    $self -> set_property( pid_file => "/tmp/rob-named.pid" );
+    $pidfile ||= "/tmp/named.pid";
+    if (!$self->{server}->{pid_file}) {
+      $self -> set_property( pid_file => $pidfile );
+    }
   }
 
   # Listen queue length
@@ -220,6 +228,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DNSServer.pm,v 1.19 2001/05/29 20:22:05 rob Exp $
+$Id: DNSServer.pm,v 1.21 2002/04/08 05:47:10 rob Exp $
 
 =cut

@@ -7,6 +7,7 @@ Changes
 Makefile.PL
 demo/named
 demo/named.forwarder
+demo/named.dbmcache
 conf/named.conf
 conf/named.root
 lib/Net/DNSServer.pm
@@ -17,3 +18,4 @@ lib/Net/DNSServer/SharedCache.pm
 lib/Net/DNSServer/DBMCache.pm
 lib/Net/DNSServer/Proxy.pm
 t/100load.t
+t/110proxy.t

@@ -38,8 +38,13 @@ sub resolve {
   die "virtual function not implemented";
 }
 
-# Called after response is sent to client
+# Called after resolve.
+# Takes the Net::DNS::Packet question as an argument.
+# If may modify $self->{answer_packet} before
+# it is sent to the client.
 sub post {
+  my $self = shift;
+#  my $net_dns_packet = shift || croak 'Usage> $obj->post($Net_DNS_obj)';
   return 1;
 }
 
@@ -54,9 +59,7 @@ __END__
 
 =head1 NAME
 
-Net::DNSServer::Base
-- This is meant to be the base class for all
-Net::DNSServer resolving module handlers.
+Net::DNSServer::Base - This is meant to be the base class for all resolving module handlers.
 
 =head1 SYNOPSIS
 
@@ -259,6 +262,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Base.pm,v 1.11 2001/05/29 03:52:53 rob Exp $
+$Id: Base.pm,v 1.13 2002/04/08 06:58:54 rob Exp $
 
 =cut
