@@ -89,6 +89,9 @@ sub resolve {
   my ($question) = $dns_packet -> question();
   my $key = $question->string();
 
+  # Create lock file to serialize DBM accesses and avoid DBM corruption
+  my $lock = IO::File->new ("$self->{dbm_file}.LOCK", "w");
+  $lock && flock($lock,LOCK_SH);
   tie (%{ $self -> {dns_cache} },
        'AnyDBM_File',
        $self->{dbm_file},
@@ -99,6 +102,8 @@ sub resolve {
           (ref $cache_structure) eq "ARRAY" &&
           (scalar @$cache_structure) == 3) {
     print STDERR "DEBUG: Cache miss on [$key;structure]\n";
+    untie (%{ $self -> {dns_cache} })
+      if tied %{ $self -> {dns_cache} };
     return undef;
   }
   print STDERR "DEBUG: Cache hit on [$key;structure]\n";
@@ -113,25 +118,27 @@ sub resolve {
   # ADDITIONAL Section
   my $additional_ref  = $self->fetch_rrs($cache_structure->[2]);
 
+  my $response = undef;
   # Make sure all sections were loaded successfully from cache.
-  unless ($answer_ref && $authority_ref && $additional_ref) {
-    # If not, flush structure key to ensure
+  if ($answer_ref && $authority_ref && $additional_ref) {
+    # Initialize the response packet with a copy of the request
+    # packet in order to set the header and question sections
+    $response = bless \%{$dns_packet}, "Net::DNS::Packet"
+      || die "Could not initialize response packet";
+
+    # Install the RRs into their corresponding sections
+    $response->push("answer",      @$answer_ref);
+    $response->push("authority",   @$authority_ref);
+    $response->push("additional",  @$additional_ref);
+
+    $self -> {net_server} -> {usecache} = 0;
+  } else {
+    # If not loaded, flush structure key to ensure
     # it will be re-stored in the post() phase.
     delete $self -> {dns_cache} -> {"$key;structure"};
-    return undef;
   }
-
-  # Initialize the response packet with a copy of the request
-  # packet in order to set the header and question sections
-  my $response = bless \%{$dns_packet}, "Net::DNS::Packet"
-    || die "Could not initialize response packet";
-
-  # Install the RRs into their corresponding sections
-  $response->push("answer",      @$answer_ref);
-  $response->push("authority",   @$authority_ref);
-  $response->push("additional",  @$additional_ref);
-
-  $self -> {net_server} -> {usecache} = 0;
+  untie (%{ $self -> {dns_cache} }) if tied %{ $self -> {dns_cache} };
+  $lock->close();
   return $response;
 }
 
@@ -162,10 +169,17 @@ sub fetch_rrs {
   return \@rrs;
 }
 
-# Called after response it sent to client
+# Called after response is sent to client
 sub post {
   my $self = shift;
   if ($self -> {net_server} -> {usecache}) {
+    # Create lock file to serialize DBM accesses and avoid DBM corruption
+    my $lock = IO::File->new ("$self->{dbm_file}.LOCK", "w");
+    $lock && flock($lock,LOCK_EX);
+    tie (%{ $self -> {dns_cache} },
+         'AnyDBM_File',
+         $self->{dbm_file},
+         O_CREAT|O_RDWR);
     # Grab the answer packet
     my $dns_packet = shift;
     # Store the answer into the cache
@@ -177,9 +191,9 @@ sub post {
     push @s, $self->store_rrs($dns_packet->additional);
     print STDERR "DEBUG: Storing cache for [$key;structure]\n";
     $self -> {dns_cache} -> {"$key;structure"} = freeze \@s;
+    untie (%{ $self -> {dns_cache} }) if tied %{ $self -> {dns_cache} };
+    $lock->close();
   }
-  untie (%{ $self -> {dns_cache} })
-    if tied %{ $self -> {dns_cache} };
   return 1;
 }
 
@@ -305,7 +319,7 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DBMCache.pm,v 1.5 2001/05/29 20:00:24 rob Exp $
+$Id: DBMCache.pm,v 1.6 2001/06/29 05:19:25 rob Exp $
 
 =cut
 

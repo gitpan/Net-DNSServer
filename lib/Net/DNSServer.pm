@@ -9,7 +9,7 @@ use Carp qw(croak);
 use vars qw(@ISA $VERSION);
 @ISA = qw(Exporter Net::Server::MultiType);
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 sub run {
   my $class = shift;
@@ -220,6 +220,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DNSServer.pm,v 1.18 2001/05/29 03:09:51 rob Exp $
+$Id: DNSServer.pm,v 1.19 2001/05/29 20:22:05 rob Exp $
 
 =cut

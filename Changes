@@ -1,5 +1,10 @@
 Revision history for Perl extension Net::DNSServer.
 
+0.06  Thu Jun 28 23:28:00 2001
+  - Combined hashes into one for Cache
+  - Actually do locking for DBMCache to avoid corruption
+  - Proxy automatically defaults from /etc/resolv.conf
+
 0.05  Mon May 28 21:00:00 2001
   - Renamed MemCache.pm to SharedCache.pm to avoid confusion
     between Cache.pm (which is in memory) and also to be
@@ -30,4 +35,4 @@ Revision history for Perl extension Net::DNSServer.
 0.01  Tue May  1 22:01:35 2001
   - original version created by h2xs
 
-$Id: Changes,v 1.9 2001/05/29 20:00:45 rob Exp $
+$Id: Changes,v 1.10 2001/06/29 05:31:38 rob Exp $

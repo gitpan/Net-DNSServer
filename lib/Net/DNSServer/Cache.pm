@@ -15,8 +15,7 @@ use Carp qw(croak);
 sub new {
   my $class = shift || __PACKAGE__;
   my $self  = shift || {};
-  $self -> {structure_cache} ||= {};
-  $self -> {lookup_cache}    ||= {};
+  $self -> {dns_cache} ||= {};
   return bless $self, $class;
 }
 
@@ -62,7 +61,7 @@ sub resolve {
   my $dns_packet = $self -> {question};
   my ($question) = $dns_packet -> question();
   my $key = $question->string();
-  my $cache_structure = $self -> {structure_cache} -> {$key} || undef;
+  my $cache_structure = $self -> {dns_cache} -> {"$key;structure"} || undef;
   unless ($cache_structure &&
           (ref $cache_structure) eq "ARRAY" &&
           (scalar @$cache_structure) == 3) {
@@ -85,7 +84,7 @@ sub resolve {
   unless ($answer_ref && $authority_ref && $additional_ref) {
     # If not, flush structure key to ensure
     # it will be re-stored in the post() phase.
-    delete $self -> {structure_cache} -> {$key};
+    delete $self -> {dns_cache} -> {"$key;structure"};
     return undef;
   }
 
@@ -111,8 +110,8 @@ sub fetch_rrs {
     return undef;
   }
   foreach my $rr_string (@$array_ref) {
-    my $lookup = validate_ttl($self -> {lookup_cache} -> {$rr_string});
-    unless ($lookup) {
+    my $lookup = validate_ttl($self -> {dns_cache} -> {"$rr_string;lookup"});
+    unless ($lookup && ref $lookup eq "ARRAY") {
       print STDERR "DEBUG: Lookup Cache miss on [$rr_string]\n";
       return undef;
     }
@@ -142,8 +141,8 @@ sub post {
     push @s, $self->store_rrs($dns_packet->answer);
     push @s, $self->store_rrs($dns_packet->authority);
     push @s, $self->store_rrs($dns_packet->additional);
-    print STDERR "DEBUG: Storing cache for [$key]\n";
-    $self -> {structure_cache} -> {$key} = \@s;
+    print STDERR "DEBUG: Storing cache for [$key;structure]\n";
+    $self -> {dns_cache} -> {"$key;structure"} = \@s;
   }
   return 1;
 }
@@ -155,7 +154,6 @@ sub post {
 sub store_rrs {
   my $self = shift;
   my $answer_hash = {};
-  my $lookup_cache = $self -> {lookup_cache};
   foreach my $rr (@_) {
     my $key = join("\t",$rr->name.".",$rr->class,$rr->type);
     my $rdatastr = $rr->rdatastr();
@@ -167,9 +165,9 @@ sub store_rrs {
     [$ttl + time, $rdatastr];
   }
   foreach my $key (keys %{$answer_hash}) {
-    print STDERR "DEBUG: Storing lookup cache for [$key] (".(scalar @{$answer_hash->{$key}})." elements)\n";
+    print STDERR "DEBUG: Storing lookup cache for [$key;lookup] (".(scalar @{$answer_hash->{$key}})." elements)\n";
     # Save the rdatastr values into the lookup cache
-    $lookup_cache->{$key} = $answer_hash->{$key};
+    $self->{dns_cache}->{"$key;lookup"} = $answer_hash->{$key};
   }
   return [keys %{$answer_hash}];
 }
@@ -221,6 +219,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Cache.pm,v 1.5 2001/05/29 05:05:32 rob Exp $
+$Id: Cache.pm,v 1.6 2001/06/29 05:20:40 rob Exp $
 
 =cut

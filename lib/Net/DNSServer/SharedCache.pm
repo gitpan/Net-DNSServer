@@ -145,8 +145,9 @@ sub fetch_rrs {
 sub post {
   my $self = shift;
   if ($self -> {net_server} -> {usecache}) {
+    # Grab the answer packet
+    my $dns_packet = shift;
     # Store the answer into the cache
-    my $dns_packet = $self -> {net_server} -> {answer_packet};
     my ($question) = $dns_packet -> question();
     my $key = $question->string();
     my @s = ();
@@ -293,7 +294,7 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: SharedCache.pm,v 1.2 2001/05/29 05:05:42 rob Exp $
+$Id: SharedCache.pm,v 1.3 2001/06/29 05:17:29 rob Exp $
 
 =cut
 

@@ -11,5 +11,6 @@ WriteMakefile
      'Net::Server'         => 0.62,  # UDP support
      'IPC::SharedCache'    => 1.3,   # PreFork support
      'Storable'            => 1.0,   # Any Storable should work
+     'Net::Bind'           => 0.03,  # Resolv parser
    },
    );
