@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -T
 
-# $Id: named,v 1.2 2001/05/27 05:31:41 rob Exp $
+# $Id: named,v 1.4 2001/05/29 03:31:23 rob Exp $
 #
 # This example starter script to load a configuration.
 # It really only forwards and caches right now, since I
@@ -17,7 +17,7 @@ BEGIN {
 use strict;
 use Net::DNSServer;
 use Net::DNSServer::ConfParser;
-use Net::DNSServer::MemCache;
+use Net::DNSServer::SharedCache;
 use Net::DNSServer::Proxy;
 #use Net::DNSServer::HintNS;
 
@@ -52,7 +52,7 @@ my $zone_ref = {};
 # DEBUG
 print Data::Dumper->Dump([$options_ref,$zone_ref],qw($options $zone));
 
-my $cache_resolver = new Net::DNSServer::MemCache {
+my $cache_resolver = new Net::DNSServer::SharedCache {
   ipc_key  => "DNSk",
   max_size => 0,
   fresh    => 1,
@@ -67,8 +67,8 @@ my $proxy_resolver = new Net::DNSServer::Proxy {
   real_dns_server => "198.60.22.22",
 };
 
-Net::DNSServer->run({
+run Net::DNSServer {
   priority => [$cache_resolver,$proxy_resolver],
-});
+};
 
 exit;

@@ -95,8 +95,8 @@ Sam Tregar <sam@tregar.com>
  - IPC::SharedCache is perfect for holding the
    DNS information with a TTL validate_hook for
    Net::Server::PreFork servers.
- - (I used it in the MemCache resolver.)
+ - It made my SharedCache resolver much easier.
 
 
 ---------------------------
-$Id: README,v 1.5 2001/05/27 04:19:34 rob Exp $
+$Id: README,v 1.6 2001/05/29 03:31:23 rob Exp $

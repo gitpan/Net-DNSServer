@@ -9,7 +9,7 @@ use Carp qw(croak);
 use vars qw(@ISA $VERSION);
 @ISA = qw(Exporter Net::Server::MultiType);
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 sub run {
   my $class = shift;
@@ -159,15 +159,17 @@ sub process_request {
     # if no module could figure out the real answer (echo)
     $self -> {answer_packet} = $answer_packet || $dns_packet;
 
-    # Send the answer back to the client
-    print STDERR "DEBUG: Answer Packet:\n",$self->{answer_packet}->string;
-    $self -> {server} -> {client} -> send($self->{answer_packet}->data);
+    print STDERR "DEBUG: Answer Packet After Resolve:\n",$self->{answer_packet}->string;
 
-    # After the answer has been sent to the client
-    # Call post() routine for each module
+    # Before the answer is sent to the client
+    # Run it through the post() routine for each module
     foreach (@{$self -> {priority}}) {
-      $_->post();
+      $_->post( $self -> {answer_packet} );
     }
+
+    # Send the answer back to the client
+    print STDERR "DEBUG: Answer Packet After Post:\n",$self->{answer_packet}->string;
+    $self -> {server} -> {client} -> send($self->{answer_packet}->data);
   } else {
     print STDERR "DEBUG: Incoming TCP packet? Not implemented\n";
   }
@@ -186,9 +188,9 @@ Net::DNSServer - Perl module to be used as a name server
 
   use Net::DNSServer;
 
-  Net::DNSServer->run({
+  run Net::DNSServer {
     priority => [ list of resolver objects ],
-  });
+  };
   # never returns
 
 =head1 DESCRIPTION
@@ -197,12 +199,8 @@ Net::DNSServer will run a name server based on the
 Net::DNSServer::Base resolver objects passed to it.
 Usually the first resolver is some sort of caching
 resolver.  The rest depend on what kind of name
-server you are trying to run.
-
-=head2 EXPORT
-
-None by default.
-
+server you are trying to run.  The run() method
+never returns.
 
 =head1 AUTHOR
 
@@ -211,15 +209,17 @@ Rob Brown, rob@roobik.com
 =head1 SEE ALSO
 
 L<Net::DNSServer::Base>,
-L<Net::DNSServer::Cache>,
-L<Net::DNSServer::MemCache>,
-L<Net::DNSServer::DBMCache>,
-L<Net::DNSServer::Proxy>,
 L<Net::DNS>,
 L<Net::Server>
 
 named(8).
 
-$Id: DNSServer.pm,v 1.14 2001/05/27 05:31:41 rob Exp $
+=head1 COPYRIGHT
+
+Copyright (c) 2001, Rob Brown.  All rights reserved.
+Net::DNSServer is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
+
+$Id: DNSServer.pm,v 1.18 2001/05/29 03:09:51 rob Exp $
 
 =cut

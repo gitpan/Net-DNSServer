@@ -4,7 +4,7 @@ MORE DOCUMENTATION
  - Perldocs
  - Example usage
 Test suite
-Recursive queries
+Recursive queries (Net::DNSServer::Recursion)
 TCP connections Xfer/Proxy
 Secondary/Slaving of zones
 Handle Dynamic Updates?

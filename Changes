@@ -1,5 +1,16 @@
 Revision history for Perl extension Net::DNSServer.
 
+0.05  Mon May 28 21:00:00 2001
+  - Renamed MemCache.pm to SharedCache.pm to avoid confusion
+    between Cache.pm (which is in memory) and also to be
+    more consistent with IPC::SharedCache, which is how
+    I implemented it.
+  - Pass the response packet to the post() method of
+    the resolver to allow fixup style manipulation of
+    the response similar to how Apache works.
+  - Got Net::DNSServer::DBMCache working with freeze/thaw
+  - Added more perldoc.
+
 0.04  Thu May 26 10:00:00 2001
   - Simpler Cache resolver for Net::Server::Single objects.
   - Actually runs on old Perl 5.005 now too.
@@ -7,6 +18,7 @@ Revision history for Perl extension Net::DNSServer.
   - Remove dependencies from my internal (non-CPAN) modules.
   - Fixed some (root) caching bugs.
   - Makefile.PL PREREQ_PM settings.
+  - Changed run() input syntax back to the old way.
 
 0.03  Thu May 24 09:00:00 2001
   - Initial attempt at reading and parsing a config file.
@@ -16,6 +28,6 @@ Revision history for Perl extension Net::DNSServer.
   - Barely function enough to respond to a udp query.
 
 0.01  Tue May  1 22:01:35 2001
-  - original version; created by h2xs 1.20 with options
-    -X Net::DNSServer
+  - original version created by h2xs
 
+$Id: Changes,v 1.9 2001/05/29 20:00:45 rob Exp $

@@ -1,9 +1,4 @@
-package Net::DNSServer::MemCache;
-
-# $Id: MemCache.pm,v 1.6 2001/05/26 17:59:08 rob Exp $
-# Implement a DNS Cache using IPC::SharedCache with shared memory
-# so Net::Server::PreFork (different processes) can share the
-# same cache to follow the rfcs.
+package Net::DNSServer::SharedCache;
 
 use strict;
 use Exporter;
@@ -204,6 +199,103 @@ sub cleanup {
 
 1;
 __END__
+
+=head1 NAME
+
+Net::DNSServer::SharedCache
+- A Net::DNSServer::Base which uses IPC::SharedCache
+to implement a DNS Cache in shared memory to allow
+the cache to be shared across processes.
+This is useful if the server forks (Net::Server::PreFork).
+
+=head1 SYNOPSIS
+
+  #!/usr/bin/perl -w -T
+  use strict;
+  use Net::DNSServer;
+  use Net::DNSServer::SharedCache;
+
+  my $resolver1 = new Net::DNSServer::SharedCache {
+    ipc_key  => "DNSk",
+    max_size => 0,
+    fresh    => 1,
+  };
+  my $resolver2 = ... another resolver object ...;
+  run Net::DNSServer {
+    priority => [$resolver1,$resolver2],
+  };
+
+=head1 DESCRIPTION
+
+This resolver will cache responses that
+another module resolves complying with the
+corresponding TTL of the response.
+It cannot provide resolution for a request
+unless it already exists within its cache.
+This resolver is useful for servers that
+may fork, because all processes will be
+able to access the same cache in shared
+memory.
+
+=head2 new
+
+The new() method takes a hash ref of properties.
+
+=head2 ipc_key (required)
+
+ipc_key is required by IPC::SharedCache
+to tie a portion of shared memory.
+It can be specified as either a four-character
+string or an integer value.
+(Passed to the tie call.)
+
+=head2 max_size (optional)
+
+This value is specified in bytes.
+It defaults to 0, which specifies no limit on the size of the cache.
+Turning this feature on costs a fair ammount of performance.
+(Passed to the tie call.)
+
+=head2 fresh (optional)
+
+Whether or not to use a fresh cache
+at server startup.
+0 means to reuse the cache under the
+ipc_key specified if one exists.
+1 means to start fresh and to release
+the shared memory at server startup
+and shutdown and restart.
+It defaults to 0 meaning it will not cleanup
+the shared memory segments it creates.
+
+Use ipcs and ipcrm to manually manage the
+shared memory segments if necessary.
+
+=head2 
+
+=head1 AUTHOR
+
+Rob Brown, rob@roobik.com
+
+=head1 SEE ALSO
+
+See
+L<IPC::SharedCache>
+for more details on ipc_key and max_size.
+
+L<Net::Server::PreFork>
+
+ipcs(8), ipcrm(8)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2001, Rob Brown.  All rights reserved.
+Net::DNSServer is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
+
+$Id: SharedCache.pm,v 1.2 2001/05/29 05:05:42 rob Exp $
+
+=cut
 
 DBM key/value storage format
 

@@ -1,10 +1,5 @@
 package Net::DNSServer::Cache;
 
-# $Id: Cache.pm,v 1.3 2001/05/26 18:00:13 rob Exp $
-# Implement a DNS Cache using IPC::SharedCache with shared memory
-# so Net::Server::PreFork (different processes) can share the
-# same cache to follow the rfcs.
-
 use strict;
 use Exporter;
 use vars qw(@ISA);
@@ -138,8 +133,9 @@ sub fetch_rrs {
 sub post {
   my $self = shift;
   if ($self -> {net_server} -> {usecache}) {
+    # Grab the answer packet
+    my $dns_packet = shift;
     # Store the answer into the cache
-    my $dns_packet = $self -> {net_server} -> {answer_packet};
     my ($question) = $dns_packet -> question();
     my $key = $question->string();
     my @s = ();
@@ -181,61 +177,50 @@ sub store_rrs {
 1;
 __END__
 
-DBM key/value storage format
+=head1 NAME
 
-Key:
-Question;struct
+Net::DNSServer::Cache
+- A Net::DNSServer::Base which implements
+a DNS Cache in memory to increase
+resolution speed and to follow rfcs.
 
-"netscape.com.	IN	ANY;structure"
+=head1 SYNOPSIS
 
-Note that [TAB] delimites the three parts of the question.
+  #!/usr/bin/perl -w -T
+  use strict;
+  use Net::DNSServer;
+  use Net::DNSServer::Cache;
 
+  my $resolver1 = new Net::DNSServer::Cache;
+  my $resolver2 = ... another resolver object ...;
+  run Net::DNSServer {
+    priority => [$resolver1,$resolver2],
+  };
 
-Value:
-[
- # ANSWERS
- ["netscape.com.	IN	NS",
-  "netscape.com.	IN	A",
-  "netscape.com.	IN	SOA"],
- # AUTHORITIES
- ["netscape.com.	IN	NS"],
- # ADDITIONALS
- ["ns.netscape.com.	IN	A",
-  "ns2.netscape.com.	IN	A"]
-]
+=head1 DESCRIPTION
 
+This resolver will cache responses that
+another module resolves complying with the
+corresponding TTL of the response.
+It cannot provide resolution for a request
+unless it already exists within its cache.
+Note: This resolver may not work properly
+with a forking server.
 
--OR-
+=head1 AUTHOR
 
+Rob Brown, rob@roobik.com
 
-Key:
-Question;lookup
-"netscape.com.	IN	A;lookup"
+=head1 SEE ALSO
 
-Value:
-[
- # TTL, VALUE (rdatastr)
- [time + 100193, "207.200.89.225"],
- [time + 100193, "207.200.89.193"]
-]
+L<Net::DNSServer::Base>
 
+=head1 COPYRIGHT
 
-;; ANSWER SECTION (5 records)
-netscape.com.	100193	IN	NS	NS.netscape.com.
-netscape.com.	100193	IN	NS	NS2.netscape.com.
-netscape.com.	1190	IN	A	207.200.89.225
-netscape.com.	1190	IN	A	207.200.89.193
-netscape.com.	100	IN	SOA	NS.netscape.com. dnsmaster.netscape.com. (
-					2001051400	; Serial
-					3600	; Refresh
-					900	; Retry
-					604800	; Expire
-					600 )	; Minimum TTL
+Copyright (c) 2001, Rob Brown.  All rights reserved.
+Net::DNSServer is free software; you can redistribute
+it and/or modify it under the same terms as Perl itself.
 
-;; AUTHORITY SECTION (2 records)
-netscape.com.	100193	IN	NS	NS.netscape.com.
-netscape.com.	100193	IN	NS	NS2.netscape.com.
+$Id: Cache.pm,v 1.5 2001/05/29 05:05:32 rob Exp $
 
-;; ADDITIONAL SECTION (2 records)
-NS.netscape.com.	138633	IN	A	198.95.251.10
-NS2.netscape.com.	115940	IN	A	207.200.73.80
+=cut

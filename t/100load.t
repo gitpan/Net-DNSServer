@@ -12,7 +12,7 @@ use Net::DNSServer::ConfParser;
 use Net::DNSServer::Base;
 use Net::DNSServer::Cache;
 use Net::DNSServer::DBMCache;
-use Net::DNSServer::MemCache;
+use Net::DNSServer::SharedCache;
 use Net::DNSServer::Proxy;
 
 $loaded = 1;
