@@ -1,12 +1,13 @@
 #!/usr/bin/perl -w -T
 
-# $Id: named,v 1.4 2001/05/29 03:31:23 rob Exp $
+# $Id: named,v 1.5 2002/04/16 20:40:17 rob Exp $
 #
 # This example starter script to load a configuration.
 # It really only forwards and caches right now, since I
 # haven't finished the configuration parsing stuff yet.
 
 BEGIN {
+  # Taint clean PERL5LIB if exists (useful for debugging)
   if ($ENV{PERL5LIB} && $ENV{PERL5LIB}=~m%^([\w\-\./:]+)$%) {
     foreach (split /:/,$1) {
       unshift (@INC,$_);
@@ -63,9 +64,7 @@ my $cache_resolver = new Net::DNSServer::SharedCache {
 #    hint_file => "conf/named.root",
 #  };
 
-my $proxy_resolver = new Net::DNSServer::Proxy {
-  real_dns_server => "198.60.22.22",
-};
+my $proxy_resolver = new Net::DNSServer::Proxy;
 
 run Net::DNSServer {
   priority => [$cache_resolver,$proxy_resolver],

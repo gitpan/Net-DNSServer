@@ -1,6 +1,6 @@
 package Net::DNSServer::Proxy;
 
-# $Id: Proxy.pm,v 1.11 2002/04/08 07:02:48 rob Exp $
+# $Id: Proxy.pm,v 1.12 2002/04/16 20:11:59 rob Exp $
 # This module simply forwards a request to another name server to do the work.
 
 use strict;
@@ -30,6 +30,8 @@ sub new {
     # XXX - This should probably cycle through all the
     # nameserver entries until one successfully accepts.
   }
+  $self -> {real_dns_server} = $1
+    if $self -> {real_dns_server} =~ /^([\d\.]+)$/;
   # XXX - It should allow a way to override the port
   #       (like host:5353) instead of forcing to 53
   # Initial "connect" to a remote resolver
@@ -156,6 +158,6 @@ Copyright (c) 2002, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Proxy.pm,v 1.11 2002/04/08 07:02:48 rob Exp $
+$Id: Proxy.pm,v 1.12 2002/04/16 20:11:59 rob Exp $
 
 =cut

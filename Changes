@@ -1,5 +1,15 @@
 Revision history for Perl extension Net::DNSServer.
 
+0.08  Tue Apr 17 17:00:00 2002
+  - Get demo/named.forwader to function again.
+  - Fixed "dig" syntax in t/110proxy.t.
+  - Moved commandline parsing operations
+    from configure_hook() to run() to override
+    the Net::Server functionality and allow
+    better bind(8) commandline compatibility.
+  - Removed Cache resolver's init method.
+  - Add spec file for rpm
+
 0.07  Mon Apr 08 01:00:00 2002
   - Implement timeout feature for Proxy resolver
     to account for UDP packet loss.
@@ -41,4 +51,4 @@ Revision history for Perl extension Net::DNSServer.
 0.01  Tue May  1 22:01:35 2001
   - original version created by h2xs
 
-$Id: Changes,v 1.11 2002/04/08 07:19:43 rob Exp $
+$Id: Changes,v 1.15 2002/04/17 23:59:56 rob Exp $

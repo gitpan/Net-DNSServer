@@ -22,5 +22,11 @@ Zone configuration file parsing
  - Use ";" as comments
  - Handle $TTL, $ORIGIN, etc
  - Zone "Templating" support
+Probably just utilize an external parsing
+module like one or more of the following:
+ - DNS::ZoneParse
+ - DNS::ZoneFile
+ - Net::Bind
+ - BIND::Conf_Parser
 DBM_File/Freeze safe cache support (Net::DNSServer::DBMCache)
-No weird hard coded files or IPs or at least better defaults.
+No weird hard coded files or at least better defaults.

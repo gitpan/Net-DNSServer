@@ -4,7 +4,7 @@ KNOWN BUGS
 TCP doesn't work.
 Structure cache never expires.
 Very slow (Inherits some slowness from Net::DNS?).
-I know DBMCache is not functional!
+DBMCache is not quite functional.
 
 If you find a bug, please report it to me including
 the following information:

@@ -9,7 +9,7 @@ use Carp qw(croak);
 use vars qw(@ISA $VERSION);
 @ISA = qw(Exporter Net::Server::MultiType);
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 sub run {
   my $class = shift;
@@ -31,68 +31,57 @@ sub run {
     }
   }
   my $self = bless $prop, $class;
-  return $self->SUPER::run(@_);
-}
 
-sub configure_hook {
-  my $self = shift;
+  $self->{server}->{commandline} ||= [ $0, @ARGV ];
   # Fix up process title on a "ps"
   $0 = join(" ",$0,@ARGV);
 
-  {
-    my ($help,$conf_file,$nodaemon,$user,$group,$server_port,$pidfile);
-    GetOptions     # arguments compatible with bind8
-      ("help"       => \$help,
-       "config-file|boot-file=s" => \$conf_file,
-       "foreground" => \$nodaemon,
-       "user=s"     => \$user,
-       "group=s"    => \$group,
-       "port=s"     => \$server_port,
-       "Pidfile=s"  => \$pidfile,
-       ) or $self -> help();
-    $self -> help() if $help;
+  my ($help,$conf_file,$nodaemon,$user,$group,$server_port,$pidfile);
+  GetOptions     # arguments compatible with bind8
+    ("help"       => \$help,
+     "config-file|boot-file=s" => \$conf_file,
+     "foreground" => \$nodaemon,
+     "user=s"     => \$user,
+     "group=s"    => \$group,
+     "port=s"     => \$server_port,
+     "Pidfile=s"  => \$pidfile,
+     ) or $self -> help();
+  $self -> help() if $help;
 
-    # Load general configuration settings
-    $conf_file ||= "/etc/named.conf";
-#    $self -> load_configuration($conf_file);
+  # Load general configuration settings
+  $conf_file ||= "/etc/named.conf";
+  ### XXX - FIXME: not working yet...
+  # $self -> load_configuration($conf_file);
 
-    # Daemonize into the background
-    $self -> set_property( setsid => 1 ) unless $nodaemon;
+  # Daemonize into the background
+  $self -> {server} -> {setsid} = 1 unless $nodaemon;
 
-    # Effective uid
-    $self -> set_property( user => $user ) if defined $user;
+  # Effective uid
+  $self -> {server} -> {user} = $user if defined $user;
 
-    # Effective gid
-    $self -> set_property( group => $group ) if defined $group;
+  # Effective gid
+  $self -> {server} -> {group} = $group if defined $group;
 
-    # Which port to bind
-    $server_port ||= getservbyname("domain", "udp");
-    $server_port ||= 53;
-    if ($self->{server}->{port} &&
-        ref $self->{server}->{port} eq "ARRAY" &&
-        (@{ $self->{server}->{port} })[0] =~ /^(\d+)/) {
-      $server_port = $1;
-    }
-    $self -> set_property( port => ["$server_port/tcp", "$server_port/udp"] );
+  # Which port to bind
+  $server_port ||= getservbyname("domain", "udp") || 53;
+  $self -> {server} -> {port} = ["$server_port/tcp", "$server_port/udp"];
 
-    # Where to store process ID for parent process
-    $pidfile ||= "/tmp/named.pid";
-    if (!$self->{server}->{pid_file}) {
-      $self -> set_property( pid_file => $pidfile );
-    }
-  }
+  # Where to store process ID for parent process
+  $self -> {server} -> {pid_file} ||= $pidfile || "/tmp/named.pid";
 
   # Listen queue length
-  $self -> set_property( listen => 12 );
+  $self -> {server} -> {listen} ||= 12;
 
   # Default IP to bind to
-  $self -> set_property( host => "0.0.0.0" );
+  $self -> {server} -> {host} ||= "0.0.0.0";
 
   # Show warnings until configuration has been initialized
-  $self -> set_property( log_level => 1 );
+  $self -> {server} -> {log_level} ||= 1;
 
   # Where to send errors
-  $self -> set_property( log_file => "/tmp/rob-named.error_log" );
+  $self -> {server} -> {log_file} ||= "/tmp/rob-named.error_log";
+
+  return $self->SUPER::run(@_);
 }
 
 sub help {
@@ -228,6 +217,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: DNSServer.pm,v 1.21 2002/04/08 05:47:10 rob Exp $
+$Id: DNSServer.pm,v 1.22 2002/04/16 20:32:19 rob Exp $
 
 =cut

@@ -1,4 +1,5 @@
 # Test if Net::DNSServer::Proxy functions correctly.
+# NOTE: Network connectivity is required to pass this test.
 
 use Test;
 plan tests => 5;
@@ -68,7 +69,7 @@ eval q{
 # Give some time for the server to bind
 sleep 2;
 
-my $test = `dig \@127.0.0.1 -type ns . -p $test_port`;
+my $test = `dig \@127.0.0.1 . ns -p $test_port`;
 
 # Dig actually ran
 ok $test;

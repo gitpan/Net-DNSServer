@@ -31,18 +31,6 @@ sub validate_ttl {
   return $value;
 }
 
-# Called once at configuration load time by Net::DNSServer.
-# Takes the Net::DNSServer object as an argument
-sub init {
-  my $self = shift;
-  my $net_server = shift;
-  unless ($net_server && (ref $net_server) && ($net_server->isa("Net::Server::Single"))) {
-    croak 'Usage> '.(__PACKAGE__).'->init(Net::Server::Single object) You gave me a ['.(ref $net_server).'] object';
-  }
-  $self -> {net_server} = $net_server,
-  return 1;
-}
-
 # Called immediately after incoming request
 # Takes the Net::DNS::Packet question as an argument
 sub pre {
@@ -219,6 +207,6 @@ Copyright (c) 2001, Rob Brown.  All rights reserved.
 Net::DNSServer is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Cache.pm,v 1.6 2001/06/29 05:20:40 rob Exp $
+$Id: Cache.pm,v 1.7 2002/04/16 16:21:15 rob Exp $
 
 =cut

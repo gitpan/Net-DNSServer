@@ -5,6 +5,9 @@ TODO
 BUGS
 Changes
 Makefile.PL
+Net-DNSServer.spec
+Net-DNSServer.spec.PL
+demo/README
 demo/named
 demo/named.forwarder
 demo/named.dbmcache

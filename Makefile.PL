@@ -16,3 +16,14 @@ WriteMakefile
     'Net::Bind'           => 0.03,  # Resolv parser
   },
   ;
+
+package MY;
+
+sub processPL {
+  my $self = shift;
+  my $block = $self->SUPER::processPL(@_);
+  # "Version:" in spec needs to match
+  # "$VERSION" from VERSION_FROM
+  $block =~ s%(spec.PL\s*)$%$1 \$\(VERSION_FROM\)%m;
+  $block;
+}
