@@ -1,0 +1,20 @@
+Net::DNSServer README
+---------------------
+
+Files included:
+named
+ - Supposed to be a drop-in replacement for /usr/sbin/named from bind
+ - (Conf file stuff not working yet.)
+named.forwarder_cache
+ - Minimum caching forwarder name server
+conf/named.conf
+ - Copied from default caching-nameserver-7.0-6
+ - (May be removed in future versions.)
+conf/named.root
+ - ftp://ftp.rs.internic.net/domain/named.root
+lib/Net/DNSServer.pm
+ - Main name server engine
+lib/Net/DNSServer/ConfParser.pm
+ - Only subroutines for reading conf files
+lib/Net/DNSServer/*
+ - Various resolver modules

@@ -1,0 +1,13 @@
+Revision history for Perl extension Net::DNSServer.
+
+0.03  Thu May 24 09:00:00 2001
+  - Initial attempt at reading and parsing a config file.
+  - Created some functional example scripts.
+
+0.02  Wed May 23 20:00:00 2001
+  - Barely function enough to respond to a udp query.
+
+0.01  Tue May  1 22:01:35 2001
+  - original version; created by h2xs 1.20 with options
+    -X Net::DNSServer
+

@@ -1,0 +1,44 @@
+#!/usr/bin/perl -w -T
+
+# $Id: named.forwarder_cache,v 1.1 2001/05/24 14:47:38 rob Exp $
+#
+# This example starter script configuration just fowards all
+# requests to "real_dns_server" and caches the responses.
+# Nothing special.
+
+BEGIN {
+  if ($ENV{PERL5LIB} && $ENV{PERL5LIB}=~m%^([\w\-\./:]+)$%) {
+    foreach (split /:/,$1) {
+      unshift (@INC,$_);
+    }
+  }
+}
+
+use strict;
+use Net::DNSServer;
+use Net::DNSServer::MemCache;
+use Net::DNSServer::Proxy;
+
+### DBMCache is not working yet
+#  my $cache_resolver = new Net::DNSServer::DBMCache {
+#    dbm_file => "/tmp/dns_cache",
+#    fresh => 1,
+#  };
+
+my $cache_resolver = new Net::DNSServer::MemCache {
+  ipc_key  => "DNSk",
+  max_size => 0,
+  fresh    => 1,
+};
+
+my $proxy_resolver = new Net::DNSServer::Proxy {
+  real_dns_server => "198.60.22.22",
+};
+
+my $server = bless {
+  priority => [$cache_resolver,$proxy_resolver],
+}, 'Net::DNSServer';
+
+$server->run();
+
+exit;

@@ -1,0 +1,23 @@
+Functions and Features that still need to be implemented:
+
+MORE DOCUMENTATION
+ - Perldocs
+ - Example usage
+Test suite
+Recursive queries
+TCP connections Xfer/Proxy
+Secondary/Slaving of zones
+Handle Dynamic Updates?
+SQL backend resolver
+Hint zone support
+Main configuration file parsing
+ - Compatible with bind, but more options
+ - Do the work of feeding into options and zone referenes
+ - Values of {} should return array ref
+Zone configuration file parsing
+ - Compatible with bind
+ - Use ";" as comments
+ - Handle $TTL, $ORIGIN, etc
+ - Zone "Templating" support
+Single process InMem cache support (Net::Server::Single only)
+DBM_File/Freeze safe cache support (Net::DNSServer::DBMCache)

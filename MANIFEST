@@ -1,0 +1,17 @@
+MANIFEST
+README
+TODO
+AUTHOR
+Changes
+Makefile.PL
+test.pl
+named
+named.forwarder_cache
+conf/named.conf
+conf/named.root
+lib/Net/DNSServer.pm
+lib/Net/DNSServer/ConfParser.pm
+lib/Net/DNSServer/Base.pm
+lib/Net/DNSServer/MemCache.pm
+lib/Net/DNSServer/DBMCache.pm
+lib/Net/DNSServer/Proxy.pm
